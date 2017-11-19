@@ -32,18 +32,12 @@ win([4,10,16,22,28]).
 win([8,14,20,26,32]).
 win([12,17,22,27,32]).
 win([32,33,34,35,36]).
-validRotation(anti-clockwise).
 validRotation(clockwise).
+validRotation(anti-clockwise).
 validQuadrant(top-left).
 validQuadrant(top-right).
 validQuadrant(bottom-left).
 validQuadrant(bottom-right).
-
-/*threatening(Board,CurrentPlayer,ThreatsCount) :-
-	Board = board(BlackL, RedL),
-	(CurrentPlayer == black -> 
-		aggregate_all(count,scenarioCheck(RedL,BlackL,Scenario),ThreatsCount);
-		aggregate_all(count,scenarioCheck(BlackL,RedL,Scenario),ThreatsCount)).*/
 
 threatening(Board,black,ThreatsCount) :-
 	Board = board(BlackL, RedL),
@@ -74,38 +68,181 @@ pentago_ai(Board,black,BestMove,NextBoard) :-
 	Board = board(BlackL,RedL),
 	validRotation(Rotation),
 	validQuadrant(Quadrant),
-	blank(Board,MovePlace),
+	blankSpaces(Board,MovePlace),
 	append([MovePlace],BlackL,NewBlackL),
 	win(Scenario),
 	countMatches(NewBlackL,Scenario,MatchCount),
 	MatchCount is 5,
-	BestMove = move(MovePlace,Rotation,Quadrant);
-	Board = board(BlackL,RedL).
+	BestMove = move(MovePlace,Rotation,Quadrant),
+	sort(NewBlackL,SortedBlack),
+	NextBoard = board(SortedBlack,RedL),
+	!.
+
+pentago_ai(Board,black,BestMove,NextBoard) :-
+	Board = board(BlackL,RedL),
+	validRotation(Rotation),
+	validQuadrant(Quadrant),
+	blankSpaces(Board,MovePlace),
+	append([MovePlace],BlackL,NewBlackL),
+	rotate(Quadrant,Rotation,NewBlackL,RedL,RotatedBlack,RotatedRed),
+	win(Scenario),
+	countMatches(RotatedBlack,Scenario,MatchCount),
+	MatchCount is 5,
+	BestMove = move(MovePlace,Rotation,Quadrant),
+	sort(RotatedBlack,SortedBlack),
+	sort(RotatedRed,SortedRed),
+	NextBoard = board(SortedBlack,SortedRed),
+	!.
+
+pentago_ai(Board,black,BestMove,NextBoard) :-
+	Board = board(BlackL,RedL),
+	validRotation(Rotation),
+	validQuadrant(Quadrant),
+	blankSpaces(Board,MovePlace),
+	append([MovePlace],BlackL,NewBlackL),
+	rotate(Quadrant,Rotation,NewBlackL,RedL,RotatedBlack,RotatedRed),
+	BestMove = move(MovePlace,Rotation,Quadrant),
+	sort(RotatedBlack,SortedBlack),
+	sort(RotatedRed,SortedRed),
+	NextBoard = board(SortedBlack,SortedRed),
+	!.
 
 pentago_ai(Board,red,BestMove,NextBoard) :-
 	Board = board(BlackL,RedL),
 	validRotation(Rotation),
 	validQuadrant(Quadrant),
-	blank(Board,MovePlace),
+	blankSpaces(Board,MovePlace),
 	append([MovePlace],RedL,NewRedL),
 	win(Scenario),
 	countMatches(NewRedL,Scenario,MatchCount),
 	MatchCount is 5,
-	BestMove = move(MovePlace,Rotation,Quadrant);
-	Board = board(BlackL,RedL).
+	BestMove = move(MovePlace,Rotation,Quadrant),
+	sort(NewRedL,SortedRed),
+	NextBoard = board(BlackL,SortedRed),
+	!.
 
+pentago_ai(Board,red,BestMove,NextBoard) :-
+	Board = board(BlackL,RedL),
+	validRotation(Rotation),
+	validQuadrant(Quadrant),
+	blankSpaces(Board,MovePlace),
+	append([MovePlace],RedL,NewRedL),
+	rotate(Quadrant,Rotation,BlackL,NewRedL,RotatedBlack,RotatedRed),
+	win(Scenario),
+	countMatches(RotatedRed,Scenario,MatchCount),
+	MatchCount is 5,
+	BestMove = move(MovePlace,Rotation,Quadrant),
+	sort(RotatedBlack,SortedBlack),
+	sort(RotatedRed,SortedRed),
+	NextBoard = board(SortedBlack,SortedRed),
+	!.
 
-blank(board(BlackL,RedL),X) :-
-    union(BlackL,RedL,Z),
-    subtract([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36],Z,Y),
-    member(X,Y).
+pentago_ai(Board,red,BestMove,NextBoard) :-
+	Board = board(BlackL,RedL),
+	validRotation(Rotation),
+	validQuadrant(Quadrant),
+	blankSpaces(Board,MovePlace),
+	append([MovePlace],RedL,NewRedL),
+	rotate(Quadrant,Rotation,BlackL,NewRedL,RotatedBlack,RotatedRed),
+	BestMove = move(MovePlace,Rotation,Quadrant),
+	sort(RotatedBlack,SortedBlack),
+	sort(RotatedRed,SortedRed),
+	NextBoard = board(SortedBlack,SortedRed),
+	!.
 
-/*WinScenarios =
-	[[1,7,13,19,25],[5,11,17,23,29],[8,9,10,11,12],[13,14,15,16,17],
-	[1,2,3,4,5],[5,10,15,20,25],[8,15,22,29,36],[14,15,16,17,18],
-	[1,8,15,22,29],[6,12,18,24,30],[9,15,21,27,33],[19,20,21,22,23],
-	[2,8,14,20,26],[6,11,16,21,26],[10,16,22,28,34],[20,21,22,23,24],
-	[2,3,4,5,6],[7,13,19,25,31],[11,17,23,29,35],[25,26,27,28,29],
-	[2,9,16,23,30],[7,8,9,10,11],[11,16,21,26,31],[26,27,28,29,30],
-	[3,9,15,21,27],[7,14,21,28,35],[12,18,24,30,36],[31,32,33,34,35],
-	[4,10,16,22,28],[8,14,20,26,32],[12,17,22,27,32],[32,33,34,35,36]],*/
+blankSpaces(board(BlackL,RedL),X) :-
+	union(BlackL,RedL,Z),
+	subtract([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36],Z,Y),
+	member(X,Y).
+
+rotate(Quadrant,Direction,BlackL,RedL,NewBlackL,NewRedL):-
+  Direction == clockwise,
+  rotateClockwise(Quadrant,BlackL,RedL,NewBlackL,NewRedL),
+  !;
+  Direction == anti-clockwise,
+  rotateAntiClockwise(Quadrant,BlackL,RedL,NewBlackL,NewRedL),
+  !.
+
+rotateClockwise(Quadrant,BlackL,RedL,NewBlackL,NewRedL):-
+  rotateClockwiseSpecific(Quadrant,BlackL,NewBlackL),
+  rotateClockwiseSpecific(Quadrant,RedL,NewRedL).
+
+rotateClockwiseSpecific(_,[],[]).
+rotateClockwiseSpecific(top-left,[1|T],[3|NewT]):-rotateClockwiseSpecific(top-left,T,NewT),!.
+rotateClockwiseSpecific(top-left,[2|T],[9|NewT]):-rotateClockwiseSpecific(top-left,T,NewT),!.
+rotateClockwiseSpecific(top-left,[3|T],[15|NewT]):-rotateClockwiseSpecific(top-left,T,NewT),!.
+rotateClockwiseSpecific(top-left,[7|T],[2|NewT]):-rotateClockwiseSpecific(top-left,T,NewT),!.
+rotateClockwiseSpecific(top-left,[9|T],[14|NewT]):-rotateClockwiseSpecific(top-left,T,NewT),!.
+rotateClockwiseSpecific(top-left,[13|T],[1|NewT]):-rotateClockwiseSpecific(top-left,T,NewT),!.
+rotateClockwiseSpecific(top-left,[14|T],[7|NewT]):-rotateClockwiseSpecific(top-left,T,NewT),!.
+rotateClockwiseSpecific(top-left,[15|T],[13|NewT]):-rotateClockwiseSpecific(top-left,T,NewT),!.
+rotateClockwiseSpecific(top-left,[H|T],[H|NewT]):-rotateClockwiseSpecific(top-left,T,NewT),!.
+rotateClockwiseSpecific(top-right,[4|T],[6|NewT]):-rotateClockwiseSpecific(top-right,T,NewT),!.
+rotateClockwiseSpecific(top-right,[5|T],[12|NewT]):-rotateClockwiseSpecific(top-right,T,NewT),!.
+rotateClockwiseSpecific(top-right,[6|T],[18|NewT]):-rotateClockwiseSpecific(top-right,T,NewT),!.
+rotateClockwiseSpecific(top-right,[10|T],[5|NewT]):-rotateClockwiseSpecific(top-right,T,NewT),!.
+rotateClockwiseSpecific(top-right,[12|T],[17|NewT]):-rotateClockwiseSpecific(top-right,T,NewT),!.
+rotateClockwiseSpecific(top-right,[16|T],[4|NewT]):-rotateClockwiseSpecific(top-right,T,NewT),!.
+rotateClockwiseSpecific(top-right,[17|T],[10|NewT]):-rotateClockwiseSpecific(top-right,T,NewT),!.
+rotateClockwiseSpecific(top-right,[18|T],[16|NewT]):-rotateClockwiseSpecific(top-right,T,NewT),!.
+rotateClockwiseSpecific(top-right,[H|T],[H|NewT]):-rotateClockwiseSpecific(top-right,T,NewT),!.
+rotateClockwiseSpecific(bottom-left,[19|T],[21|NewT]):-rotateClockwiseSpecific(bottom-left,T,NewT),!.
+rotateClockwiseSpecific(bottom-left,[20|T],[27|NewT]):-rotateClockwiseSpecific(bottom-left,T,NewT),!.
+rotateClockwiseSpecific(bottom-left,[21|T],[33|NewT]):-rotateClockwiseSpecific(bottom-left,T,NewT),!.
+rotateClockwiseSpecific(bottom-left,[25|T],[20|NewT]):-rotateClockwiseSpecific(bottom-left,T,NewT),!.
+rotateClockwiseSpecific(bottom-left,[27|T],[32|NewT]):-rotateClockwiseSpecific(bottom-left,T,NewT),!.
+rotateClockwiseSpecific(bottom-left,[31|T],[19|NewT]):-rotateClockwiseSpecific(bottom-left,T,NewT),!.
+rotateClockwiseSpecific(bottom-left,[32|T],[25|NewT]):-rotateClockwiseSpecific(bottom-left,T,NewT),!.
+rotateClockwiseSpecific(bottom-left,[33|T],[31|NewT]):-rotateClockwiseSpecific(bottom-left,T,NewT),!.
+rotateClockwiseSpecific(bottom-left,[H|T],[H|NewT]):-rotateClockwiseSpecific(bottom-left,T,NewT),!.
+rotateClockwiseSpecific(bottom-right,[22|T],[24|NewT]):-rotateClockwiseSpecific(bottom-right,T,NewT),!.
+rotateClockwiseSpecific(bottom-right,[23|T],[30|NewT]):-rotateClockwiseSpecific(bottom-right,T,NewT),!.
+rotateClockwiseSpecific(bottom-right,[24|T],[36|NewT]):-rotateClockwiseSpecific(bottom-right,T,NewT),!.
+rotateClockwiseSpecific(bottom-right,[28|T],[23|NewT]):-rotateClockwiseSpecific(bottom-right,T,NewT),!.
+rotateClockwiseSpecific(bottom-right,[30|T],[35|NewT]):-rotateClockwiseSpecific(bottom-right,T,NewT),!.
+rotateClockwiseSpecific(bottom-right,[34|T],[22|NewT]):-rotateClockwiseSpecific(bottom-right,T,NewT),!.
+rotateClockwiseSpecific(bottom-right,[35|T],[28|NewT]):-rotateClockwiseSpecific(bottom-right,T,NewT),!.
+rotateClockwiseSpecific(bottom-right,[36|T],[34|NewT]):-rotateClockwiseSpecific(bottom-right,T,NewT),!.
+rotateClockwiseSpecific(bottom-right,[H|T],[H|NewT]):-rotateClockwiseSpecific(bottom-right,T,NewT).
+
+rotateAntiClockwise(Quadrant,BlackL,RedL,NewBlackL,NewRedL):-
+  rotateAntiClockwiseSpecific(Quadrant,BlackL,NewBlackL),
+  rotateAntiClockwiseSpecific(Quadrant,RedL,NewRedL).
+
+rotateAntiClockwiseSpecific(_,[],[]).
+rotateAntiClockwiseSpecific(top-left,[1|T],[13|NewT]):-rotateAntiClockwiseSpecific(top-left,T,NewT),!.
+rotateAntiClockwiseSpecific(top-left,[2|T],[7|NewT]):-rotateAntiClockwiseSpecific(top-left,T,NewT),!.
+rotateAntiClockwiseSpecific(top-left,[3|T],[1|NewT]):-rotateAntiClockwiseSpecific(top-left,T,NewT),!.
+rotateAntiClockwiseSpecific(top-left,[7|T],[14|NewT]):-rotateAntiClockwiseSpecific(top-left,T,NewT),!.
+rotateAntiClockwiseSpecific(top-left,[9|T],[2|NewT]):-rotateAntiClockwiseSpecific(top-left,T,NewT),!.
+rotateAntiClockwiseSpecific(top-left,[13|T],[15|NewT]):-rotateAntiClockwiseSpecific(top-left,T,NewT),!.
+rotateAntiClockwiseSpecific(top-left,[14|T],[9|NewT]):-rotateAntiClockwiseSpecific(top-left,T,NewT),!.
+rotateAntiClockwiseSpecific(top-left,[15|T],[3|NewT]):-rotateAntiClockwiseSpecific(top-left,T,NewT),!.
+rotateAntiClockwiseSpecific(top-left,[H|T],[H|NewT]):-rotateAntiClockwiseSpecific(top-left,T,NewT),!.
+rotateAntiClockwiseSpecific(top-right,[4|T],[16|NewT]):-rotateAntiClockwiseSpecific(top-right,T,NewT),!.
+rotateAntiClockwiseSpecific(top-right,[5|T],[10|NewT]):-rotateAntiClockwiseSpecific(top-right,T,NewT),!.
+rotateAntiClockwiseSpecific(top-right,[6|T],[4|NewT]):-rotateAntiClockwiseSpecific(top-right,T,NewT),!.
+rotateAntiClockwiseSpecific(top-right,[10|T],[17|NewT]):-rotateAntiClockwiseSpecific(top-right,T,NewT),!.
+rotateAntiClockwiseSpecific(top-right,[12|T],[5|NewT]):-rotateAntiClockwiseSpecific(top-right,T,NewT),!.
+rotateAntiClockwiseSpecific(top-right,[16|T],[18|NewT]):-rotateAntiClockwiseSpecific(top-right,T,NewT),!.
+rotateAntiClockwiseSpecific(top-right,[17|T],[12|NewT]):-rotateAntiClockwiseSpecific(top-right,T,NewT),!.
+rotateAntiClockwiseSpecific(top-right,[18|T],[6|NewT]):-rotateAntiClockwiseSpecific(top-right,T,NewT),!.
+rotateAntiClockwiseSpecific(top-right,[H|T],[H|NewT]):-rotateAntiClockwiseSpecific(top-right,T,NewT),!.
+rotateAntiClockwiseSpecific(bottom-left,[19|T],[31|NewT]):-rotateAntiClockwiseSpecific(bottom-left,T,NewT),!.
+rotateAntiClockwiseSpecific(bottom-left,[20|T],[25|NewT]):-rotateAntiClockwiseSpecific(bottom-left,T,NewT),!.
+rotateAntiClockwiseSpecific(bottom-left,[21|T],[19|NewT]):-rotateAntiClockwiseSpecific(bottom-left,T,NewT),!.
+rotateAntiClockwiseSpecific(bottom-left,[25|T],[32|NewT]):-rotateAntiClockwiseSpecific(bottom-left,T,NewT),!.
+rotateAntiClockwiseSpecific(bottom-left,[27|T],[20|NewT]):-rotateAntiClockwiseSpecific(bottom-left,T,NewT),!.
+rotateAntiClockwiseSpecific(bottom-left,[31|T],[33|NewT]):-rotateAntiClockwiseSpecific(bottom-left,T,NewT),!.
+rotateAntiClockwiseSpecific(bottom-left,[32|T],[27|NewT]):-rotateAntiClockwiseSpecific(bottom-left,T,NewT),!.
+rotateAntiClockwiseSpecific(bottom-left,[33|T],[21|NewT]):-rotateAntiClockwiseSpecific(bottom-left,T,NewT),!.
+rotateAntiClockwiseSpecific(bottom-left,[H|T],[H|NewT]):-rotateAntiClockwiseSpecific(bottom-left,T,NewT),!.
+rotateAntiClockwiseSpecific(bottom-right,[22|T],[34|NewT]):-rotateAntiClockwiseSpecific(bottom-right,T,NewT),!.
+rotateAntiClockwiseSpecific(bottom-right,[23|T],[28|NewT]):-rotateAntiClockwiseSpecific(bottom-right,T,NewT),!.
+rotateAntiClockwiseSpecific(bottom-right,[24|T],[22|NewT]):-rotateAntiClockwiseSpecific(bottom-right,T,NewT),!.
+rotateAntiClockwiseSpecific(bottom-right,[28|T],[35|NewT]):-rotateAntiClockwiseSpecific(bottom-right,T,NewT),!.
+rotateAntiClockwiseSpecific(bottom-right,[30|T],[23|NewT]):-rotateAntiClockwiseSpecific(bottom-right,T,NewT),!.
+rotateAntiClockwiseSpecific(bottom-right,[34|T],[36|NewT]):-rotateAntiClockwiseSpecific(bottom-right,T,NewT),!.
+rotateAntiClockwiseSpecific(bottom-right,[35|T],[30|NewT]):-rotateAntiClockwiseSpecific(bottom-right,T,NewT),!.
+rotateAntiClockwiseSpecific(bottom-right,[36|T],[24|NewT]):-rotateAntiClockwiseSpecific(bottom-right,T,NewT),!.
+rotateAntiClockwiseSpecific(bottom-right,[H|T],[H|NewT]):-rotateAntiClockwiseSpecific(bottom-right,T,NewT).
